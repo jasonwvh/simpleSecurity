@@ -9,18 +9,27 @@ import (
 )
 
 type Result struct {
-	CanConnect bool
+	CanConnect   bool
+	TLSProtocols map[string]bool
 }
 
 func RunCheck(w http.ResponseWriter, r *http.Request) {
+	var res Result
 	vars := mux.Vars(r)
 	ep := vars["endpoint"]
 	log.Printf("checking endpoint %s", ep)
 
-	c := CheckConnection(ep)
-	res := &Result{
-		CanConnect: c,
+	c, err := CheckConnection(ep)
+	res.CanConnect = c
+	if err != nil {
+		log.Print(err)
 	}
+
+	t, err := CheckTLS(ep)
+	if err != nil {
+		log.Print(err)
+	}
+	res.TLSProtocols = t
 
 	json.NewEncoder(w).Encode(res)
 }
