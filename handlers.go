@@ -11,6 +11,7 @@ import (
 type Result struct {
 	CanConnect   bool
 	TLSProtocols map[string]bool
+	OCSPChain    map[string]bool
 }
 
 func RunCheck(w http.ResponseWriter, r *http.Request) {
@@ -20,7 +21,6 @@ func RunCheck(w http.ResponseWriter, r *http.Request) {
 	log.Printf("checking endpoint %s", ep)
 
 	c, err := CheckConnection(ep)
-	res.CanConnect = c
 	if err != nil {
 		log.Print(err)
 	}
@@ -29,7 +29,17 @@ func RunCheck(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Print(err)
 	}
-	res.TLSProtocols = t
+
+	o, err := CheckOCSPChain(ep)
+	if err != nil {
+		log.Print(err)
+	}
+
+	res = Result{
+		CanConnect:   c,
+		TLSProtocols: t,
+		OCSPChain:    o,
+	}
 
 	json.NewEncoder(w).Encode(res)
 }
